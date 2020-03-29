@@ -6,6 +6,6 @@ namespace Jellyfin.Plugins.Telegram.Configuration
         public bool Enabled { get; set; }
         public string Token { get; set; }
         public string ChatId { get; set; }
-
+        public bool SilentNotificationEnabled { get; set; }
     }
 }

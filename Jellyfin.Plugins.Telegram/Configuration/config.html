@@ -47,6 +47,14 @@
                                 Chat Id for yout Telgram bot chat
                             </div>
                         </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label>
+                                <input type="checkbox" id="chkSilentNotificationEnabled" is="emby-checkbox" />
+                                <span>Silent notifications</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Enable bot silent notifications
+                            </div>
+                        </div>
 
                         <div>
                             <button type="button" is="emby-button" class="raised button-cancel block btnCancel"
@@ -81,6 +89,7 @@
                     $('#chkEnableTelegram', page).checked(telegramConfig.Enabled || false).checkboxradio("refresh");
                     $('#txtTelegramToken', page).val(telegramConfig.Token || '');
                     $('#txtTelegramChatId', page).val(telegramConfig.ChatId || '');
+                    $('#chkSilentNotificationEnabled', page).val(telegramConfig.SilentNotificationEnabled || '');
 
                     Dashboard.hideLoadingMsg();
                 });
@@ -164,6 +173,7 @@
                     telegramConfig.Enabled = $('#chkEnableTelegram', form).checked();
                     telegramConfig.Token = $('#txtTelegramToken', form).val();
                     telegramConfig.ChatId = $('#txtTelegramChatId', form).val();
+                    telegramConfig.SilentNotificationEnabled = $('#chkSilentNotificationEnabled', form).checked();
 
                     ApiClient.updatePluginConfiguration(TelegramPluginConfig.uniquePluginId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });

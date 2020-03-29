@@ -22,12 +22,13 @@ namespace Jellyfin.Plugins.Telegram
             _jsonSerializer = jsonSerializer;
         }
 
-        public static async Task SendNotification(IHttpClient httpClient, IJsonSerializer jsonSerializer, string token, string chatId, string text)
+        public static async Task SendNotification(IHttpClient httpClient, IJsonSerializer jsonSerializer, string token, string chatId, bool fSilentNotificationEnabled, string text)
         {
             var body = new Dictionary<string, object>() {
                 {"chat_id", chatId},
                 {"text", text},
-                {"parse_mode","html"}
+                {"parse_mode","html"},
+                {"disable_notification", fSilentNotificationEnabled},
             };
 
             var requestOptions = new HttpRequestOptions
@@ -47,7 +48,7 @@ namespace Jellyfin.Plugins.Telegram
 
             await Notifier.SendNotification(
                 _httpClient, _jsonSerializer,
-                options.Token, options.ChatId,
+                options.Token, options.ChatId, options.SilentNotificationEnabled,
                 string.IsNullOrEmpty(request.Description) ? request.Name : request.Description
             );
         }

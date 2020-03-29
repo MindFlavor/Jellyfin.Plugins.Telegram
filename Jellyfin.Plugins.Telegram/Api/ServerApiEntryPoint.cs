@@ -43,7 +43,7 @@ namespace Jellyfin.Plugins.Telegram.Api
 
             await Notifier.SendNotification(
                 _httpClient, _jsonSerializer,
-                options.Token, options.ChatId,
+                options.Token, options.ChatId, options.SilentNotificationEnabled,
                 "This is a test notification from Jellyfin"
             );
         }
