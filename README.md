@@ -1,8 +1,6 @@
 # Jellyfin.Plugins.Telegram
 Telegram bot Notification Agent for Jellyfin
 
-Get started with Gotify at https://gotify.net/
-
 Get started with Jellyfin at https://jellyfin.github.io/
 
 ## How to use
