@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <title>Telegram Notifications</title>
+</head>
+
+<body>
+    <div data-role="page" class="page type-interior pluginConfigurationPage telegramConfigurationPage">
+        <div data-role="content">
+            <div class="content-primary">
+                <form class="telegramConfigurationForm">
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <div style="height:0; overflow: hidden;">
+                            <input type="text" name="fakeusernameremembered" tabindex="-1" />
+                            <input type="password" name="fakepasswordremembered" tabindex="-1" />
+                        </div>
+                        <div class="sectionTitleContainer flex align-items-center">
+                            <h2 class="sectionTitle">Telegram Settings:</h2>
+                            <a is="emby-button" class="raised button-alt headerHelpButton" target="_blank"
+                                href="https://github.com/mindflavor/jellyfin-plugin-telegram">${Help}</a>
+                        </div>
+                        <div class="selectContainer">
+                            <label for="selectUser">Configure Telegram notifications for:</label>
+                            <select is="emby-select" id="selectUser"></select>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label>
+                                <input type="checkbox" id="chkEnableTelegram" is="emby-checkbox" />
+                                <span>Enabled</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Enable Telegram for the selected
+                                user.
+                            </div>
+                        </div>
+                        <div class="inputContainer">
+                            <label for="txtTelegramToken">Telegram bot token:</label>
+                            <input type="text" id="txtTelegramToken" required="required" is="emby-input" />
+                            <div class="fieldDescription">
+                                Token for your Telegram bot
+                            </div>
+                        </div>
+                        <div class="inputContainer">
+                            <label for="txtTelegramChatId">Telegram chat ID:</label>
+                            <input type="text" id="txtTelegramChatId" required="required" is="emby-input" />
+                            <div class="fieldDescription">
+                                Chat Id for yout Telgram bot chat
+                            </div>
+                        </div>
+
+                        <div>
+                            <button type="button" is="emby-button" class="raised button-cancel block btnCancel"
+                                id="testNotification">
+                                <span>Test Notification</span>
+                            </button>
+                        </div>
+                        <br />
+                        <div>
+                            <button is="emby-button" type="submit" data-theme="b"
+                                class="raised button-submit block"><span>Save</span></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+
+            var TelegramPluginConfig = {
+                uniquePluginId: "0269B736-58C7-436C-995B-0F7127092D5F"
+            };
+
+            function loadUserConfig(page, userId) {
+                Dashboard.showLoadingMsg();
+                ApiClient.getPluginConfiguration(TelegramPluginConfig.uniquePluginId).then(function (config) {
+
+                    var telegramConfig = config.Options.filter(function (c) {
+                        return userId === c.UserId;
+                    })[0] || {};
+
+                    $('#chkEnableTelegram', page).checked(telegramConfig.Enabled || false).checkboxradio("refresh");
+                    $('#txtTelegramToken', page).val(telegramConfig.Token || '');
+                    $('#txtTelegramChatId', page).val(telegramConfig.ChatId || '');
+
+                    Dashboard.hideLoadingMsg();
+                });
+            }
+
+            $('.telegramConfigurationPage').on('pageinit', function (event) {
+                var page = this;
+                $('#selectUser', page).on('change', function () {
+                    loadUserConfig(page, this.value);
+                });
+
+                $('#testNotification', page).on('click', function (event) {
+                    Dashboard.showLoadingMsg();
+                    var onError = function () {
+                        alert("There was an error sending the test notification. Please check your notification settings and try again.");
+                        require(['alert'], function (alert) {
+                            Dashboard.hideLoadingMsg();
+                        });
+                    };
+
+                    ApiClient.getPluginConfiguration(TelegramPluginConfig.uniquePluginId).then(function (config) {
+                        if (!config.Options.length) {
+                            Dashboard.hideLoadingMsg();
+                            require(['alert'], function (alert) {
+                                alert("Please configure and save at least one notification account.");
+                            });
+                        }
+
+                        config.Options.map(function (c) {
+                            ApiClient.ajax({
+                                type: "POST",
+                                url: ApiClient.getUrl("Notification/Telegram/Test/" + c.UserId)
+
+                            }).then(function () {
+                                Dashboard.hideLoadingMsg();
+                            }, onError);
+                        });
+                    });
+                });
+
+            }).on('pageshow', function (event) {
+
+                Dashboard.showLoadingMsg();
+
+                var page = this;
+
+                ApiClient.getUsers().then(function (users) {
+
+                    $('#selectUser', page).html(users.map(function (user) {
+
+                        return '<option value="' + user.Id + '">' + user.Name + '</option>';
+
+                    })).selectmenu('refresh').trigger('change');
+
+                });
+
+                Dashboard.hideLoadingMsg();
+            });
+
+            $('.telegramConfigurationForm').on('submit', function (e) {
+
+                Dashboard.showLoadingMsg();
+
+                var form = this;
+
+                ApiClient.getPluginConfiguration(TelegramPluginConfig.uniquePluginId).then(function (config) {
+
+                    var userId = $('#selectUser', form).val();
+
+                    var telegramConfig = config.Options.filter(function (c) {
+                        return userId === c.UserId;
+                    })[0];
+
+                    if (!telegramConfig) {
+                        telegramConfig = {};
+                        config.Options.push(telegramConfig);
+                    }
+
+                    telegramConfig.UserId = userId;
+
+                    telegramConfig.Enabled = $('#chkEnableTelegram', form).checked();
+                    telegramConfig.Token = $('#txtTelegramToken', form).val();
+                    telegramConfig.ChatId = $('#txtTelegramChatId', form).val();
+
+                    ApiClient.updatePluginConfiguration(TelegramPluginConfig.uniquePluginId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                });
+
+                return false;
+            });
+
+        </script>
+    </div>
+</body>
+
+</html>
