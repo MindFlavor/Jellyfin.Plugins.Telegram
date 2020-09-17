@@ -8,6 +8,7 @@ using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Notifications;
 using MediaBrowser.Model.Serialization;
+using Jellyfin.Data.Entities;
 
 namespace Jellyfin.Plugins.Telegram
 {
@@ -61,7 +62,7 @@ namespace Jellyfin.Plugins.Telegram
 
         public string Name => Plugin.Instance.Name;
 
-        private static TelegramOptions GetOptions(BaseItem user)
+        private static TelegramOptions GetOptions(User user)
         {
             return Plugin.Instance.Configuration.Options
                 .FirstOrDefault(u => string.Equals(u.UserId, user.Id.ToString("N"),
