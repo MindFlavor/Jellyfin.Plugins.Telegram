@@ -29,7 +29,7 @@ namespace Jellyfin.Plugins.Telegram
             };
         }
 
-        private readonly Guid _id = new Guid("0269b736-58c7-436c-995b-0f7127092d5f");
+        private readonly Guid _id = new Guid("0269B736-58C7-436C-995B-0F7127092D5F");
         public override Guid Id => _id;
 
         public static Plugin Instance { get; private set; }

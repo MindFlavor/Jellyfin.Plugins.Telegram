@@ -1,29 +1,34 @@
 using System;
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugins.Telegram.Configuration;
+using System.Text.Json;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
+using Microsoft.Extensions.Logging;
 using MediaBrowser.Controller.Notifications;
 using MediaBrowser.Model.Serialization;
+using System.Net.Mime;
 using Jellyfin.Data.Entities;
+using System.Net.Http;
 
 namespace Jellyfin.Plugins.Telegram
 {
     public class Notifier : INotificationService
     {
-        private readonly IHttpClient _httpClient;
-        private readonly IJsonSerializer _jsonSerializer;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<Notifier> _logger;
 
-        public Notifier(IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public Notifier(ILogger<Notifier> logger, IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClient;
-            _jsonSerializer = jsonSerializer;
+            _httpClientFactory = httpClientFactory;
+            _logger = logger;
         }
 
-        public static async Task SendNotification(IHttpClient httpClient, IJsonSerializer jsonSerializer, string token, string chatId, bool fSilentNotificationEnabled, string text)
+        public static async Task SendNotification(IHttpClientFactory httpClientFactory, string token, string chatId, bool fSilentNotificationEnabled, string text)
         {
             var body = new Dictionary<string, object>() {
                 {"chat_id", chatId},
@@ -32,15 +37,12 @@ namespace Jellyfin.Plugins.Telegram
                 {"disable_notification", fSilentNotificationEnabled},
             };
 
-            var requestOptions = new HttpRequestOptions
-            {
-                Url = $"https://api.telegram.org/bot{token}/sendMessage",
-                RequestContent = jsonSerializer.SerializeToString(body),
-                RequestContentType = "application/json",
-                LogErrorResponseBody = true
-            };
+            using var requestMessage = new HttpRequestMessage(HttpMethod.Post, $"https://api.telegram.org/bot{token}/sendMessage");
+            requestMessage.Content = new StringContent(JsonSerializer.Serialize(body),
+            System.Text.Encoding.UTF8, MediaTypeNames.Application.Json);
 
-            await httpClient.Post(requestOptions).ConfigureAwait(false);
+            var httpClient = httpClientFactory.CreateClient(NamedClient.Default);
+            using var responseMessage = await httpClient.SendAsync(requestMessage).ConfigureAwait(false);
         }
 
         public async Task SendNotification(UserNotification request, CancellationToken cancellationToken)
@@ -48,7 +50,7 @@ namespace Jellyfin.Plugins.Telegram
             var options = GetOptions(request.User);
 
             await Notifier.SendNotification(
-                _httpClient, _jsonSerializer,
+                _httpClientFactory,
                 options.Token, options.ChatId, options.SilentNotificationEnabled,
                 string.IsNullOrEmpty(request.Description) ? request.Name : request.Description
             );
@@ -60,7 +62,7 @@ namespace Jellyfin.Plugins.Telegram
             return options != null && IsValid(options) && options.Enabled;
         }
 
-        public string Name => Plugin.Instance.Name;
+        public string Name => Plugin.Instance!.Name;
 
         private static TelegramOptions GetOptions(User user)
         {
