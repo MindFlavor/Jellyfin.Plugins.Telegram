@@ -73,35 +73,42 @@
         </div>
 
         <script type="text/javascript">
-
             var TelegramPluginConfig = {
                 uniquePluginId: "0269B736-58C7-436C-995B-0F7127092D5F"
             };
 
             function loadUserConfig(page, userId) {
+                //console.log("in Telegram::loadUserconfig with userId == " + userId);
                 Dashboard.showLoadingMsg();
                 ApiClient.getPluginConfiguration(TelegramPluginConfig.uniquePluginId).then(function (config) {
+                    //console.log(config);
 
                     var telegramConfig = config.Options.filter(function (c) {
                         return userId === c.UserId;
                     })[0] || {};
 
-                    $('#chkEnableTelegram', page).checked(telegramConfig.Enabled || false).checkboxradio("refresh");
-                    $('#txtTelegramToken', page).val(telegramConfig.Token || '');
-                    $('#txtTelegramChatId', page).val(telegramConfig.ChatId || '');
-                    $('#chkSilentNotificationEnabled', page).val(telegramConfig.SilentNotificationEnabled || '');
+                    //console.log(telegramConfig);
+
+                    page.querySelector('#chkEnableTelegram').checked = telegramConfig.Enabled || false;
+                    page.querySelector('#txtTelegramToken').value = telegramConfig.Token || '';
+                    page.querySelector('#txtTelegramChatId').value = telegramConfig.ChatId || '';
+                    page.querySelector('#chkSilentNotificationEnabled').checked = telegramConfig.SilentNotificationEnabled || false;
 
                     Dashboard.hideLoadingMsg();
                 });
             }
 
-            $('.telegramConfigurationPage').on('pageinit', function (event) {
+            document.querySelector('.telegramConfigurationPage').addEventListener('pageinit', function (event) {
+                //console.log("in Telegram::pageinit - " + this);
                 var page = this;
-                $('#selectUser', page).on('change', function () {
+
+                page.querySelector("#selectUser").addEventListener('change', function () {
+                    //console.log("in Telegram::selectUser::change");
                     loadUserConfig(page, this.value);
                 });
 
-                $('#testNotification', page).on('click', function (event) {
+                page.querySelector('#testNotification').addEventListener('click', function (event) {
+                    //console.log("in Telegram::testNotification::click");
                     Dashboard.showLoadingMsg();
                     var onError = function () {
                         alert("There was an error sending the test notification. Please check your notification settings and try again.");
@@ -130,20 +137,23 @@
                     });
                 });
 
-            }).on('pageshow', function (event) {
+            });
+
+            document.querySelector('.telegramConfigurationPage').addEventListener('pageshow', function (event) {
+                //console.log("in Telegram::pageshow");
 
                 Dashboard.showLoadingMsg();
 
                 var page = this;
 
                 ApiClient.getUsers().then(function (users) {
-
-                    $('#selectUser', page).html(users.map(function (user) {
-
+                    //console.log("Telegram - got Users");
+                    document.getElementById('selectUser').innerHTML = users.map(function (user) {
                         return '<option value="' + user.Id + '">' + user.Name + '</option>';
-
-                    })).selectmenu('refresh').trigger('change');
-
+                    });
+                    let selectedUser = document.getElementById('selectUser').value;
+                    //console.log('selected user after got Users == ' + selectedUser);
+                    loadUserConfig(page, selectedUser);
                 });
 
                 Dashboard.hideLoadingMsg();
@@ -170,10 +180,10 @@
 
                     telegramConfig.UserId = userId;
 
-                    telegramConfig.Enabled = $('#chkEnableTelegram', form).checked();
+                    telegramConfig.Enabled = document.getElementById('chkEnableTelegram').checked;
                     telegramConfig.Token = $('#txtTelegramToken', form).val();
                     telegramConfig.ChatId = $('#txtTelegramChatId', form).val();
-                    telegramConfig.SilentNotificationEnabled = $('#chkSilentNotificationEnabled', form).checked();
+                    telegramConfig.SilentNotificationEnabled = document.getElementById('chkSilentNotificationEnabled').checked;
 
                     ApiClient.updatePluginConfiguration(TelegramPluginConfig.uniquePluginId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });
