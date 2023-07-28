@@ -52,7 +52,7 @@ namespace Jellyfin.Plugins.Telegram
             await Notifier.SendNotification(
                 _httpClientFactory,
                 options.Token, options.ChatId, options.SilentNotificationEnabled,
-                string.IsNullOrEmpty(request.Description) ? request.Name : request.Description
+                string.IsNullOrEmpty(request.Name) ? request.Name : request.Description
             );
         }
 
